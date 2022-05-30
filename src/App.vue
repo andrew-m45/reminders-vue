@@ -1,6 +1,7 @@
 <template>
   <div class="home__container">
     <Header title="Reminders" @toggle-addReminder="toggleAddReminder" />
+    <!-- toggle add reminder modal visbility conditonally  -->
     <div v-if="showAddReminder">
       <AddReminder
         @add-reminder="addReminder"
@@ -14,7 +15,7 @@
       @toggle-alert="toggleAlert"
       :reminders="reminders"
     />
-    <Footer :reminders="reminders" @delete-all="deleteAll" />
+    <Footer :reminders="reminders" />
   </div>
 </template>
 
@@ -35,55 +36,84 @@ export default {
     };
   },
   methods: {
-    addReminder(reminder) {
-      // pushes the new reminder onto reminders array
-      this.reminders.push(reminder);
+    async addReminder(reminder) {
+      // add reminder to db.json
+      const response = await fetch("http://localhost:5000/reminders", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(reminder),
+      });
+
+      const data = await response.json();
+
+      // pushes the response into the reminders array
+      this.reminders.push(data);
     },
-    deleteReminder(id) {
-      // filters the reminders array and reassigns it after removing the selected reminder
-      this.reminders = this.reminders.filter((reminder) => reminder.id !== id);
+    async deleteReminder(id) {
+      // delete reminder in db.json
+      const response = await fetch(`http://localhost:5000/reminders/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.status === 200) {
+        // filters the reminders array and reassigns it after removing the selected reminder
+        this.reminders = this.reminders.filter(
+          (reminder) => reminder.id !== id
+        );
+      } else {
+        alert("Erorr deleting reminder");
+      }
     },
-    toggleAlert(id) {
-      // returns an updated reminders array by checking the id matches and reverse the current alert status
+    async toggleAlert(id) {
+      // fetch the reminder to update alert status
+      const reminderToToggle = await this.fetchReminder(id);
+      // reverses the alert status on the reminder object
+      const reminderUpdated = {
+        ...reminderToToggle,
+        alert: !reminderToToggle.alert,
+      };
+
+      const response = await fetch(`http://localhost:5000/reminders/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(reminderUpdated),
+      });
+
+      const data = await response.json();
+
+      // returns an updated reminders array by changing the status according to fetch response
       this.reminders = this.reminders.map((reminder) =>
-        reminder.id === id ? { ...reminder, alert: !reminder.alert } : reminder
+        reminder.id === id ? { ...reminder, alert: data.alert } : reminder
       );
-      console.log(id);
     },
     toggleAddReminder() {
       // reverses value of showAddReminder
       this.showAddReminder = !this.showAddReminder;
     },
 
-    deleteAll() {
-      // clear all reminders
-      this.reminders = [];
+    async fetchReminders() {
+      // fetch all reminders
+      const response = await fetch("http://localhost:5000/reminders");
+      const data = await response.json();
+      return data;
+    },
+    async fetchReminder(id) {
+      // fetch a single reminders
+      const response = await fetch(`http://localhost:5000/reminders/${id}`);
+      const data = await response.json();
+      return data;
     },
   },
   created: function () {
-    this.reminders = [
-      {
-        id: 1,
-        text: "Workout",
-        day: "March 3rd",
-        time: "2:30pm",
-        alert: true,
-      },
-      {
-        id: 2,
-        text: "Assignment Due (BI)",
-        day: "March 3rd",
-        time: "8:00pm",
-        alert: true,
-      },
-      {
-        id: 3,
-        text: "Shopping",
-        day: "March 4th",
-        time: "10:00pm",
-        alert: false,
-      },
-    ];
+    // fetch reminders from db.json
+    fetch("http://localhost:5000/reminders")
+      .then((response) => response.json().then((data) => data))
+      .then((result) => (this.reminders = result))
+      .catch((error) => console.log(error));
   },
 };
 </script>
