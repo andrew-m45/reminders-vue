@@ -1,0 +1,26 @@
+{
+  "reminders": [
+    {
+      "id": 1,
+      "text": "Workout",
+      "day": "March 3rd",
+      "time": "2:30pm",
+      "alert": true
+    },
+    {
+      "id": 2,
+      "text": "Assignment Due (BI)",
+      "day": "March 3rd",
+      "time": "8:00pm",
+      "alert": true
+    },
+    {
+      "id": 3,
+      "text": "Shopping",
+      "day": "March 4th",
+      "time": "12:00am",
+      "alert": false
+    }
+
+  ]
+}
